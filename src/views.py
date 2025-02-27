@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import json
 
-operations_path = os.path.join(os.path.dirname(__file__), "../data/operations1.xlsx")
+operations_path = os.path.join(os.path.dirname(__file__), "../data/operations.xls")
 
 def read_df_excel():
     '''Читаем Excel-файл'''

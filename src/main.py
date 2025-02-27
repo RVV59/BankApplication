@@ -1,5 +1,5 @@
 from pathlib import Path
-import loguru
+# import loguru
 
 # # Определение пути до папки logs в корне проекта
 # project_root = Path(__file__).parent.resolve()  # Получаем путь до корня проекта

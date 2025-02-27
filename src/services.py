@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List, Dict, Any
 from logger import logger
 
-logger.info("Это сообщение из module1.py")
 
 def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) -> float:
     """
