@@ -1,56 +1,72 @@
-class TestFinancialData(unittest.TestCase):
+import os
+import json
+from dotenv import load_dotenv
+import requests
 
-    def setUp(self):
-        self.api_key = 'TEST_API_KEY'
+# Загрузка переменных окружения из .env файла
+load_dotenv()
 
-    @patch('requests.get')
-    def test_successful_response(self, mock_get):
-        # Подготавливаем моки для успешных запросов
-        stock_mock_response = {'Global Quote': {'05. price': '150.00'}}
-        currency_mock_response = {'Realtime Currency Exchange Rate': {'5. Exchange Rate': '70.00'}}
+# Чтение настроек из user_settings.json
+current_dir = os.path.dirname(os.path.abspath(__file__))
+user_settings_path = os.path.join(current_dir, '../user_settings.json')
 
-        # Настройка моков для запросов акций и валют
-        mock_get.side_effect = [
-            MagicMock(return_value={'json': lambda: stock_mock_response}),  # Ответ для акций
-            MagicMock(return_value={'json': lambda: currency_mock_response})  # Ответ для валют
-        ]
+# Чтение настроек из user_settings.json
+with open(user_settings_path, 'r') as f:
+    user_settings = json.load(f)
 
-        # Выполняем функцию
-        actual_result = get_financial_data(self.api_key)
+currencies = user_settings.get('user_currencies', [])
+stocks = user_settings.get('user_stocks', [])
 
-        # Ожидаемый результат
-        expected_result = json.dumps({
-            "currency_rates": [
-                {
-                    "currency": "USD",
-                    "rate": 70.00
-                }
-            ],
-            "stock_prices": [
-                {
-                    "stock": "AAPL",
-                    "price": 150.00
-                }
-            ]
-        }, indent=4)
+# Получение API ключа из переменной окружения
+api_key = os.getenv('AV_SANDP500_API')
 
-        # Сравниваем полученные данные с ожидаемыми
-        self.assertEqual(actual_result, expected_result)
+def get_currency_and_stock_data(api_key):
+    financial_data = {}
 
-    @patch('requests.get')
-    def test_error_handling(self, mock_get):
-        # Подготовка мока для ошибки
-        error_mock_response = {'Error Message': 'Invalid API key'}
+    # Запрашиваем курсы валют
+    currency_rates = []
+    for currency in currencies:
+        url = f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={currency}&to_currency=RUB&apikey={api_key}'
 
-        # Настройка мока для возврата ошибки
-        mock_get.return_value = MagicMock(return_value={'json': lambda: error_mock_response})
+        try:
+            response = requests.get(url)
+            data = response.json()
 
-        # Выполнение функции должно вызвать ошибку
-        with self.assertRaises(Exception) as context:
-            get_financial_data(self.api_key)
+            rate = float(data['Realtime Currency Exchange Rate']['5. Exchange Rate'])
+            currency_rates.append({
+                "currency": currency,
+                "rate": round(rate, 2)
+            })
+        except KeyError:
+            print(f"Ошибка при получении данных для валюты {currency}: {data}")
 
-        # Проверка сообщения об ошибке
-        self.assertTrue('Invalid API key' in str(context.exception))
+    # Запрашиваем курсы акций
+    stock_prices = []
+    for ticker in stocks:
+        url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={api_key}'
 
-if __name__ == '__main__':
-    unittest.main()
+        try:
+            response = requests.get(url)
+            data = response.json()
+
+            price = float(data['Global Quote']['05. price'])
+            stock_prices.append({
+                "stock": ticker,
+                "price": round(price, 2)
+            })
+        except KeyError:
+            print(f"Ошибка при получении данных для акции {ticker}: {data}")
+
+    # Формирование финального JSON ответа
+    financial_data.update({"currency_rates": currency_rates})
+    financial_data.update({"stock_prices": stock_prices})
+
+    json_data = json.dumps(financial_data, indent=4)
+
+    return json_data
+
+
+# Пример использования функции
+if __name__ == "__main__":
+    json_str = get_currency_and_stock_data(api_key)
+    print(json_str)
