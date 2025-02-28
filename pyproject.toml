@@ -3,6 +3,9 @@ name = "bankapplic"
 version = "0.1.0"
 description = ""
 authors = ["RVlad <reshetov664@gmail.com>"]
+packages = [
+    { include = "src", from = "." }  # Указываем, что пакет находится в `src/`
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -12,6 +15,7 @@ python-dotenv = "^1.0.1"
 pandas = "^2.2.3"
 openpyxl = "^3.1.5"
 loguru = "^0.7.3"
+pytest = "^8.3.4"
 
 
 [tool.poetry.group.lint.dependencies]

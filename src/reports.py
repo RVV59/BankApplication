@@ -1,28 +1,26 @@
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
-from mypy.strconv import indent
 from logger import logger
 import functools
 from typing import Optional
-from views import read_df_excel
+from src.views import read_df_excel
 
 
-# Пример данных
 transactions = read_df_excel()
 transactions["Категория"] = transactions["Категория"].str.strip()  # Удалить пробелы в начале и конце
 
-# Функция для фильтрации транзакций по категории и дате
-def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
 
+
+def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """
     Возвращает траты по заданной категории за последние три месяца.
     """
     # Определяем дату
     if date is None:
-        date = datetime.now()
+        date = pd.Timestamp.now()
     else:
-        date = datetime.strptime(date, "%Y-%m-%d")
+        date = pd.Timestamp(date)  # Преобразуем строку в Timestamp
 
     # Вычисляем дату начала периода (три месяца назад)
     start_date = date - pd.DateOffset(months=3)
@@ -44,6 +42,7 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
     logger.info(f"Найдено {len(filtered_transactions)} транзакций по категории '{category}' за последние три месяца.")
 
     return filtered_transactions
+
 
 # Декоратор для записи результата в файл
 def report_to_file(filename: Optional[str] = None):
