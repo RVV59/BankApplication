@@ -1,4 +1,6 @@
 import os
+from typing import Any
+
 import pandas as pd
 from datetime import datetime, timedelta
 import json
@@ -19,6 +21,9 @@ df["Дата операции"] = pd.to_datetime(df["Дата операции"]
 
 # Преобразуем столбец "Сумма операции" в числовой формат
 df["Сумма операции"] = df["Сумма операции"].astype(str).str.replace(",", ".").astype(float)
+# df["Сумма операции"] = df["Сумма операции"].astype(str).str.replace(",", ".")
+df_sorted = df.sort_values(by="Сумма операции", ascending=False)
+print(df_sorted)
 
 
 def get_date_range(date_str, period="M"):
@@ -50,8 +55,9 @@ def get_financial_data(date_str, period="M"):
 
     # Расходы (отрицательные суммы)
     expenses_df = filtered_df[filtered_df["Сумма операции"] < 0]
-    expenses_total = expenses_df["Сумма операции"].sum() * -1  # Сумма расходов (положительное число)
+    expenses_total: int | Any = expenses_df["Сумма операции"].sum() * 1  # Сумма расходов (положительное число)
     expenses_by_category = expenses_df.groupby("Категория")["Сумма операции"].sum().abs().to_dict()
+    sorted_expenses_by_category = sorted(expenses_by_category.items(), key=lambda x: abs(x[1]), reverse=True)
 
     # Поступления (положительные суммы)
     incomes_df = filtered_df[filtered_df["Сумма операции"] > 0]
@@ -62,7 +68,9 @@ def get_financial_data(date_str, period="M"):
     result = {
         "expenses": {
             "total": expenses_total,
-            "categories": expenses_by_category
+            "categories": sorted_expenses_by_category
+            # "total_amount": expenses_total,
+            # "main": expenses_by_category
         },
         "incomes": {
             "total": incomes_total,

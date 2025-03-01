@@ -82,12 +82,14 @@ stocks = user_settings.get('user_stocks', [])
 api_key = os.getenv('AV_SANDP500_API')
 
 def get_currency_and_stock_data(api_key):
+    '''Запрашивает по API данные курсов валют и акций и возвращает результат в json строке'''
     financial_data = {}
 
-    # Запрашиваем курсы валют
+    # Запрашивает курсы валют
     currency_rates = []
     for currency in currencies:
-        url = f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={currency}&to_currency=RUB&apikey={api_key}'
+        url = (f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={currency}'
+               f'&to_currency=RUB&apikey={api_key}')
 
         try:
             response = requests.get(url)
@@ -128,8 +130,8 @@ def get_currency_and_stock_data(api_key):
 
 
 # Пример использования функции
-if __name__ == "__main__":
-    json_str = get_currency_and_stock_data(api_key)
-    print(json_str)
+# if __name__ == "__main__":
+json_str = get_currency_and_stock_data(api_key)
+print(json_str)
 
 
