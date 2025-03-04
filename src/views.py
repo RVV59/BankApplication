@@ -1,9 +1,10 @@
 import os
 from typing import Any
-
 import pandas as pd
 from datetime import datetime, timedelta
 import json
+from logger import logger
+
 
 operations_path = os.path.join(os.path.dirname(__file__), "../data/operations.xls")
 
@@ -53,7 +54,7 @@ def get_financial_data(date_str, period="M"):
 
     # Расходы (отрицательные суммы)
     expenses_df = filtered_df[filtered_df["Сумма операции"] < 0]
-    expenses_total = expenses_df["Сумма операции"].sum()  # Сумма расходов (положительное число)
+    expenses_total = int(expenses_df["Сумма операции"].sum() * -1) # Сумма расходов (положительное число)
     expenses_by_category = expenses_df.groupby("Категория")["Сумма операции"].sum().abs().to_dict()
     sorted_expenses_by_category = sorted(expenses_by_category.items(), key=lambda x: abs(x[1]), reverse=True)
 
@@ -67,10 +68,10 @@ def get_financial_data(date_str, period="M"):
     # Собираем данные о главных расходах
     main_expenses_list = []
     for cat, amt in main_expenses:
-        main_expenses_list.append({"category": cat, "amount": amt})
+        main_expenses_list.append({"category": cat, "amount": int(amt)})
 
     # Собираем данные о прочих расходах
-    others_expenses = {"category": "Others", "amount": others_total}
+    others_expenses = {"category": "Others", "amount": int(others_total)}
 
     # Поступления (положительные суммы)
     incomes_df = filtered_df[filtered_df["Сумма операции"] > 0]
@@ -99,5 +100,6 @@ def get_financial_data(date_str, period="M"):
 
     return json.dumps(result, indent=4, ensure_ascii=False)
 
-# Пример вызова функции
+logger.info("Начало тестирования финансовой отчетности...")
 print(get_financial_data("2021-12-31", "M"))
+logger.info("Тестирование финансовой отчетности завершено.")
