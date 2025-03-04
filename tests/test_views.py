@@ -1,72 +1,76 @@
-import os
+import pytest
+import pandas as pd
+from datetime import datetime
 import json
-from dotenv import load_dotenv
-import requests
+from src.views import get_financial_data, read_df_excel  # Замените `your_module` на имя вашего модуля
 
-# Загрузка переменных окружения из .env файла
-load_dotenv()
+# Загружаем тестовые данные один раз для всех тестов
+@pytest.fixture(scope="module")
+def test_data():
+    df = read_df_excel()
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
+    df["Сумма операции"] = df["Сумма операции"].astype(str).str.replace(",", ".").astype(float)
+    return df
 
-# Чтение настроек из user_settings.json
-current_dir = os.path.dirname(os.path.abspath(__file__))
-user_settings_path = os.path.join(current_dir, '../user_settings.json')
+# Тест для месячного периода
+def test_get_financial_data_monthly(test_data):
+    result = get_financial_data("2021-12-31", "M")
+    result_dict = json.loads(result)
 
-# Чтение настроек из user_settings.json
-with open(user_settings_path, 'r') as f:
-    user_settings = json.load(f)
+    # Проверяем, что результат содержит ожидаемые ключи
+    assert "expenses" in result_dict
+    assert "income" in result_dict
+    assert "currency_rates" in result_dict
+    assert "stock_prices" in result_dict
 
-currencies = user_settings.get('user_currencies', [])
-stocks = user_settings.get('user_stocks', [])
+    # Проверяем, что сумма расходов и доходов не отрицательная
+    assert result_dict["expenses"]["total_amount"] >= 0
+    assert result_dict["income"]["total_amount"] >= 0
 
-# Получение API ключа из переменной окружения
-api_key = os.getenv('AV_SANDP500_API')
+    # Проверяем, что категории расходов и доходов не пустые
+    assert len(result_dict["expenses"]["main"]) > 0
+    assert len(result_dict["income"]["categories"]) > 0
 
-def get_currency_and_stock_data(api_key):
-    financial_data = {}
+# Тест для недельного периода
+def test_get_financial_data_weekly(test_data):
+    result = get_financial_data("2021-12-31", "W")
+    result_dict = json.loads(result)
 
-    # Запрашиваем курсы валют
-    currency_rates = []
-    for currency in currencies:
-        url = f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={currency}&to_currency=RUB&apikey={api_key}'
+    # Проверяем, что результат содержит ожидаемые ключи
+    assert "expenses" in result_dict
+    assert "income" in result_dict
 
-        try:
-            response = requests.get(url)
-            data = response.json()
+    # Проверяем, что сумма расходов и доходов не отрицательная
+    assert result_dict["expenses"]["total_amount"] >= 0
+    assert result_dict["income"]["total_amount"] >= 0
 
-            rate = float(data['Realtime Currency Exchange Rate']['5. Exchange Rate'])
-            currency_rates.append({
-                "currency": currency,
-                "rate": round(rate, 2)
-            })
-        except KeyError:
-            print(f"Ошибка при получении данных для валюты {currency}: {data}")
+# Тест для годового периода
+def test_get_financial_data_yearly(test_data):
+    result = get_financial_data("2021-12-31", "Y")
+    result_dict = json.loads(result)
 
-    # Запрашиваем курсы акций
-    stock_prices = []
-    for ticker in stocks:
-        url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={api_key}'
+    # Проверяем, что результат содержит ожидаемые ключи
+    assert "expenses" in result_dict
+    assert "income" in result_dict
 
-        try:
-            response = requests.get(url)
-            data = response.json()
+    # Проверяем, что сумма расходов и доходов не отрицательная
+    assert result_dict["expenses"]["total_amount"] >= 0
+    assert result_dict["income"]["total_amount"] >= 0
 
-            price = float(data['Global Quote']['05. price'])
-            stock_prices.append({
-                "stock": ticker,
-                "price": round(price, 2)
-            })
-        except KeyError:
-            print(f"Ошибка при получении данных для акции {ticker}: {data}")
+# Тест для всего периода
+def test_get_financial_data_all(test_data):
+    result = get_financial_data("2021-12-31", "ALL")
+    result_dict = json.loads(result)
 
-    # Формирование финального JSON ответа
-    financial_data.update({"currency_rates": currency_rates})
-    financial_data.update({"stock_prices": stock_prices})
+    # Проверяем, что результат содержит ожидаемые ключи
+    assert "expenses" in result_dict
+    assert "income" in result_dict
 
-    json_data = json.dumps(financial_data, indent=4)
+    # Проверяем, что сумма расходов и доходов не отрицательная
+    assert result_dict["expenses"]["total_amount"] >= 0
+    assert result_dict["income"]["total_amount"] >= 0
 
-    return json_data
-
-
-# Пример использования функции
-if __name__ == "__main__":
-    json_str = get_currency_and_stock_data(api_key)
-    print(json_str)
+# Тест для некорректного периода
+def test_get_financial_data_invalid_period(test_data):
+    with pytest.raises(ValueError, match="Неверный параметр диапазона"):
+        get_financial_data("2021-12-31", "INVALID")
