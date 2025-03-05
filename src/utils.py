@@ -4,6 +4,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
+
 load_dotenv()
 current_dir = os.path.dirname(os.path.abspath(__file__))
 user_settings_path = os.path.join(current_dir, '../user_settings.json')
