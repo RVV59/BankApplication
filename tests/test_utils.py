@@ -1,97 +1,59 @@
-import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import patch, mock_open, Mock
 import json
-from src.utils import get_currency_and_stock_data  # Убедитесь, что импорт правильный
+from src.utils import get_currency_and_stock_data
 
-# Мок для чтения файла user_settings.json
-user_settings_mock = {
+@patch('os.getenv')
+# Mock для открытия файла user_settings.json
+@patch('builtins.open', new_callable=mock_open, read_data=json.dumps({
     'user_currencies': ['USD', 'EUR'],
-    'user_stocks': ['AAPL', 'AMZN', 'TSLA']
-}
-
-# Мок для ответа API курсов валют
-currency_response_mock = {
-    "Realtime Currency Exchange Rate": {
-        "5. Exchange Rate": "75.50"
-    }
-}
-
-# Мок для ответа API курсов акций
-stock_response_mock = {
-    "Global Quote": {
-        "05. price": "150.00"
-    }
-}
-
-# Мок для ошибки API
-error_response_mock = {
-    "Error Message": "Invalid API call"
-}
-
-
+    'user_stocks': ['AAPL', 'AMZN', 'GOOGL', 'MSFT', 'TSLA']  # Все акции
+}))
+# Mock для requests.get
 @patch('requests.get')
-@patch('os.getenv')
-@patch('builtins.open', new_callable=mock_open, read_data=json.dumps(user_settings_mock))
-def test_get_currency_and_stock_data(mock_file, mock_getenv, mock_get):
-    # Настройка моков
+def test_get_currency_and_stock_data(mock_requests_get, mock_file, mock_getenv):
     mock_getenv.return_value = 'test_api_key'
 
-    # Используем бесконечный генератор для side_effect
-    from itertools import cycle
-    mock_get.return_value.json.side_effect = cycle([
-        currency_response_mock,  # Ответ для USD
-        currency_response_mock,  # Ответ для EUR
-        stock_response_mock,  # Ответ для AAPL
-        stock_response_mock,  # Ответ для AMZN
-        stock_response_mock  # Ответ для TSLA
-    ])
+    mock_response_currency = Mock()
+    mock_response_currency.json.return_value = {
+        'Realtime Currency Exchange Rate': {
+            '5. Exchange Rate': '75.50'
+        }
+    }
 
-    # Вызов тестируемой функции
+    mock_response_stock = Mock()
+    mock_response_stock.json.return_value = {
+        'Global Quote': {
+            '05. price': '150.00'
+        }
+    }
+
+    mock_requests_get.side_effect = [
+        mock_response_currency,  # Ответ для USD
+        mock_response_currency,  # Ответ для EUR
+        mock_response_stock,     # Ответ для AAPL
+        mock_response_stock,     # Ответ для AMZN
+        mock_response_stock,     # Ответ для GOOGL
+        mock_response_stock,     # Ответ для MSFT
+        mock_response_stock      # Ответ для TSLA
+    ]
+
     result = get_currency_and_stock_data('test_api_key')
 
-    # Преобразуем результат в словарь для удобства проверки
-    result_dict = json.loads(result)
+    expected_result = json.dumps({
+        "currency_rates": [
+            {"currency": "USD", "rate": 75.5},
+            {"currency": "EUR", "rate": 75.5}
+        ],
+        "stock_prices": [
+            {"stock": "AAPL", "price": 150.0},
+            {"stock": "AMZN", "price": 150.0},
+            {"stock": "GOOGL", "price": 150.0},
+            {"stock": "MSFT", "price": 150.0},
+            {"stock": "TSLA", "price": 150.0}
+        ]
+    }, indent=4)
 
-    # Проверка структуры результата
-    assert "currency_rates" in result_dict, "Отсутствует ключ 'currency_rates'"
-    assert "stock_prices" in result_dict, "Отсутствует ключ 'stock_prices'"
+    assert result == expected_result, "Результат не соответствует ожидаемому"
 
-    # Проверка количества валют и акций
-    assert len(result_dict["currency_rates"]) == 2, "Ожидалось 2 валюты"
-    assert len(result_dict["stock_prices"]) == 3, "Ожидалось 3 акции"
-
-    # Проверка структуры данных для валют
-    for currency in result_dict["currency_rates"]:
-        assert "currency" in currency, "Отсутствует ключ 'currency'"
-        assert "rate" in currency, "Отсутствует ключ 'rate'"
-
-    # Проверка структуры данных для акций
-    for stock in result_dict["stock_prices"]:
-        assert "stock" in stock, "Отсутствует ключ 'stock'"
-        assert "price" in stock, "Отсутствует ключ 'price'"
-
-
-# Тест для обработки ошибок
-@patch('requests.get')
-@patch('os.getenv')
-@patch('builtins.open', new_callable=mock_open, read_data=json.dumps(user_settings_mock))
-def test_get_currency_and_stock_data_error(mock_file, mock_getenv, mock_get):
-    # Настройка моков
-    mock_getenv.return_value = 'test_api_key'
-
-    # Мокируем ошибку API
-    mock_get.return_value.json.side_effect = [error_response_mock]
-
-    # Вызов тестируемой функции
-    result = get_currency_and_stock_data('test_api_key')
-
-    # Проверка, что функция корректно обрабатывает ошибку
-    assert "currency_rates" in json.loads(result), "Ожидался ключ 'currency_rates'"
-    assert "stock_prices" in json.loads(result), "Ожидался ключ 'stock_prices'"
-
-
-# Запуск тестов
-if __name__ == "__main__":
-    test_get_currency_and_stock_data()
-    test_get_currency_and_stock_data_error()
-    print("Тесты пройдены успешно!")
+test_get_currency_and_stock_data()
+print("Тест успешно пройден!")

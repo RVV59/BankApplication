@@ -1,6 +1,4 @@
 import pytest
-import pandas as pd
-from datetime import datetime
 from src.views import read_df_excel
 from src.reports import spending_by_category, report_to_file
 
