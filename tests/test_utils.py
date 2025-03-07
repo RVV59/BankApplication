@@ -2,6 +2,7 @@ from unittest.mock import patch, mock_open, Mock
 import json
 from src.utils import get_currency_and_stock_data
 
+
 @patch('os.getenv')
 # Mock для открытия файла user_settings.json
 @patch('builtins.open', new_callable=mock_open, read_data=json.dumps({
@@ -54,6 +55,3 @@ def test_get_currency_and_stock_data(mock_requests_get, mock_file, mock_getenv):
     }, indent=4)
 
     assert result == expected_result, "Результат не соответствует ожидаемому"
-
-test_get_currency_and_stock_data()
-print("Тест успешно пройден!")

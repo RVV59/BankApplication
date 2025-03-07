@@ -1,16 +1,16 @@
 import pytest
 import pandas as pd
-from datetime import datetime
 import json
 from src.views import get_financial_data, read_df_excel  # Замените `your_module` на имя вашего модуля
 
-# Загружаем тестовые данные один раз для всех тестов
+
 @pytest.fixture(scope="module")
 def test_data():
     df = read_df_excel()
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
     df["Сумма операции"] = df["Сумма операции"].astype(str).str.replace(",", ".").astype(float)
     return df
+
 
 # Тест для месячного периода
 def test_get_financial_data_monthly(test_data):
@@ -31,6 +31,7 @@ def test_get_financial_data_monthly(test_data):
     assert len(result_dict["expenses"]["main"]) > 0
     assert len(result_dict["income"]["categories"]) > 0
 
+
 # Тест для недельного периода
 def test_get_financial_data_weekly(test_data):
     result = get_financial_data("2021-12-31", "W")
@@ -43,6 +44,7 @@ def test_get_financial_data_weekly(test_data):
     # Проверяем, что сумма расходов и доходов не отрицательная
     assert result_dict["expenses"]["total_amount"] >= 0
     assert result_dict["income"]["total_amount"] >= 0
+
 
 # Тест для годового периода
 def test_get_financial_data_yearly(test_data):
@@ -57,6 +59,7 @@ def test_get_financial_data_yearly(test_data):
     assert result_dict["expenses"]["total_amount"] >= 0
     assert result_dict["income"]["total_amount"] >= 0
 
+
 # Тест для всего периода
 def test_get_financial_data_all(test_data):
     result = get_financial_data("2021-12-31", "ALL")
@@ -69,6 +72,7 @@ def test_get_financial_data_all(test_data):
     # Проверяем, что сумма расходов и доходов не отрицательная
     assert result_dict["expenses"]["total_amount"] >= 0
     assert result_dict["income"]["total_amount"] >= 0
+
 
 # Тест для некорректного периода
 def test_get_financial_data_invalid_period(test_data):

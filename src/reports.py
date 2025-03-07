@@ -2,11 +2,10 @@ import functools
 import os
 from datetime import datetime
 from typing import Optional
-
 import pandas as pd
-
 from logger import logger
 from src.views import read_df_excel
+
 
 transactions = read_df_excel()
 transactions["Категория"] = transactions["Категория"].str.strip()

@@ -83,4 +83,3 @@ def find_transactions_by_phone(transactions: List[Dict[str, Any]]) -> List[Dict[
 
 
 res = find_transactions_by_phone(transactions)
-print(res)

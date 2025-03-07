@@ -1,6 +1,7 @@
 import pytest
 from src.services import investment_bank
 
+
 def test_investment_bank():
     # Тестовые данные
     transactions = [

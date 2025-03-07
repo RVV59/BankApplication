@@ -1,12 +1,14 @@
 import pytest
 from src.views import read_df_excel
-from src.reports import spending_by_category, report_to_file
+from src.reports import spending_by_category
+
 
 @pytest.fixture(scope='module')
 def transactions():
     df = read_df_excel()
     df['Категория'] = df['Категория'].str.strip()
     return df
+
 
 @pytest.mark.parametrize('category, expected_length', [
     ('Супермаркеты', 131),

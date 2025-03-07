@@ -45,7 +45,8 @@ def get_date_range(date_str, period="M"):
 
 
 def get_financial_data(date_str, period="M"):
-    '''Возвращает jsoт отфильтрованную и отсортированную строку с расходами по категориям и поступлениями из базы операций'''
+    '''Возвращает jsoт отфильтрованную и отсортированную строку с расходами по категориям и поступлениями из базы
+    операций'''
     start_date, end_date = get_date_range(date_str, period)
 
     filtered_df = df[(df["Дата операции"] >= start_date) & (df["Дата операции"] <= end_date)]
