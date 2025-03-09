@@ -12,7 +12,7 @@ with open(user_settings_path, 'r') as f:
     user_settings = json.load(f)
 
 currencies = user_settings.get('user_currencies', [])
-stocks = user_settings.get('user_stocks',[])
+stocks = user_settings.get('user_stocks', [])
 
 api_key = os.getenv('AV_SANDP500_API')
 
